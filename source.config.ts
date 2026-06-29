@@ -5,6 +5,9 @@ import { docsPageSchema } from "./src/schema";
 export const docs = defineDocs({
 	dir: "content/docs",
 	docs: {
+		postprocess: {
+			includeProcessedMarkdown: true
+		},
 		schema: pageSchema.extend(docsPageSchema.shape)
 	}
 });

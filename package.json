@@ -12,6 +12,7 @@
 	"exports": {
 		"./components": "./src/components/index.ts",
 		"./layout": "./src/layout.tsx",
+		"./llms": "./src/llms.ts",
 		"./mdx-components": "./src/mdx-components.tsx",
 		"./schema": "./src/schema.ts",
 		"./types": "./src/types.ts"
