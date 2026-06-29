@@ -10,6 +10,7 @@ export {
 	StructureTable
 } from "./DocsComponents";
 export { DocsSidebar } from "./DocsSidebar";
+export { LLMPageActions } from "./LLMPageActions";
 export { PreviousAndNext } from "./PreviousAndNext";
 export { ServerList } from "./ServerList";
 export { SupportedCryptocurrencies } from "./SupportedCryptocurrencies";

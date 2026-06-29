@@ -2,7 +2,7 @@ import { DocsBody, DocsPage, DocsTitle } from "fumadocs-ui/layouts/docs/page";
 import type { Metadata } from "next";
 import { notFound, redirect } from "next/navigation";
 import { source } from "../../../lib/source";
-import { PreviousAndNext, TableOfContents } from "../../../src/components";
+import { LLMPageActions, PreviousAndNext, TableOfContents } from "../../../src/components";
 import { getDocsMdxComponents } from "../../../src/mdx-components";
 import type { DocNeighbour } from "../../../src/types";
 
@@ -47,6 +47,8 @@ export default async function DocumentationPage({ params }: DocsPageProperties) 
 	const next = neighbour(pageIndex >= 0 && pageIndex < pages.length - 1 ? pages[pageIndex + 1] : undefined);
 	const toc = page.data.toc.filter((item) => item.depth === 2);
 	const MdxContent = page.data.body;
+	const githubUrl = `https://github.com/autoplus-gg/docs/edit/main/content/docs/${page.path}`;
+	const markdownUrl = `${page.url}.md`;
 
 	return (
 		<DocsPage
@@ -61,14 +63,7 @@ export default async function DocumentationPage({ params }: DocsPageProperties) 
 				<DocsTitle className="!flex !items-center !text-5xl !font-bold">{page.data.heading}</DocsTitle>
 				<MdxContent components={getDocsMdxComponents()} />
 				<PreviousAndNext previous={previous} next={next} />
-				<a
-					href={`https://github.com/autoplus-gg/docs/edit/main/content/docs/${page.path}`}
-					target="_blank"
-					rel="noreferrer noopener"
-					className="absolute top-1 right-4 inline-flex text-sm text-primary hover:underline 2xl:right-20"
-				>
-					Edit this page on GitHub
-				</a>
+				<LLMPageActions githubUrl={githubUrl} markdownUrl={markdownUrl} />
 			</DocsBody>
 		</DocsPage>
 	);
