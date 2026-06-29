@@ -1,8 +1,8 @@
 ---
 title: Public API Documentation
 heading: "📄 Public API Documentation"
-description: AutoPlus's API is based on a HTTPS/REST architecture. The API is there mostly to be used in the website autoplus.gg but some endpoints can be used to integrate AutoPlus in your own projects.
-metadataTitle: "AutoPlus ― Public API Documentation"
+description: Reference documentation for the AutoPlus public REST API and automated trade endpoints.
+metadataTitle: "AutoPlus — Public API Documentation"
 navigationTitle: Public API Docs
 ogImage: /banner.png
 icon: file-code
@@ -11,99 +11,402 @@ order: 5
 
 ## API Reference [#api-reference]
 
-AutoPlus's API is based on a HTTPS/REST architecture. The API is there mostly to be used in the website autoplus.gg but some endpoints can be used to integrate AutoPlus in your own projects.
+The AutoPlus public API uses HTTPS and JSON. It provides public AutoPlus statistics and user-authenticated endpoints for opening and automating escrow trades.
 
 ### Base URL [#base-url]
 
 <Block color="gray" padding="p-2" className="mt-2">
-  <code>{"https://api.autoplus.gg/v{version}"}</code>
+  <code>https://api.autoplus.gg/v1</code>
 </Block>
 
-Where `{"{version}"}` is the API version you want to use. Currently, the only version available is v1.
+Version `v1` is currently the only available API version.
 
 ### Authentication [#authentication]
 
-Some endpoints require authentication. You can authenticate using a api key in the Authorization header.
-
-### Example: [#authentication-example]
+Every trade endpoint requires an API token associated with one Discord user. Send it using the bearer authentication scheme:
 
 <Block color="gray" padding="p-2" className="mt-2">
-  <code>Authorization: h27FGjb3AyjVkGBzRThH</code>
+  <code>Authorization: Bearer YOUR_API_TOKEN</code>
 </Block>
 
-Where `h27FGjb3AyjVkGBzRThH` is your api key. To get your API key, open a support ticket.
+Open a support ticket in the [AutoPlus Discord server](https://discord.gg/autoplus) to request an API token. Keep it private and use it only from a trusted server.
+
+The `/servers`, `/stats`, and `/transactions` endpoints do not require authentication.
+
+### Request format [#request-format]
+
+Requests with a body must include `Content-Type: application/json`.
+
+Discord user IDs, guild IDs, and trade IDs are JSON strings. Timestamps are integer Unix timestamps in seconds. Optional response fields are omitted when they have no value.
+
+### Idempotency [#idempotency]
+
+The following endpoints require an `Idempotency-Key` header:
+
+- `POST /guilds/{guildId}/trades`
+- `POST /trades/{id}/confirm-action`
+- `POST /trades/{id}/confirm-claim`
+
+The key must contain 8 to 128 characters. Use a unique random value for each new operation. If a request times out, retry the identical request with the same key. Reusing a key with different request data returns `409 Conflict`.
 
 ### Crypto type [#crypto]
 
-This refers to the crypto/token that the bot supports. Here is the exact type:
+The `Crypto` type identifies both the asset and, for tokens, its network:
 
 <Block color="gray" padding="p-2" className="mt-2">
   <code>"ltc" | "sol" | "eth" | "bnb" | "btc" | "pol" | "sol_usdt" | "sol_usdc" | "eth_usdt" | "eth_usdc" | "bnb_usdt" | "bnb_usdc" | "pol_usdt" | "pol_usdc" | "pol_usdce"</code>
 </Block>
 
-## Endpoints [#endpoints]
+Availability also depends on the networks currently enabled by AutoPlus.
 
-Here are the available endpoints:
+### Trade automation rules [#trade-automation-rules]
 
-## GET /servers [toc] [#servers-endpoint]
+- The authenticated user must be the sender or receiver of every trade they access.
+- Route parameter `id` is the Discord trade thread ID returned by trade creation, not the incremental `tradeId`.
+- Identification and terms confirmations must repeat the exact values from the latest trade response.
+- Only the sender can release funds. Only the receiver can return funds.
+- Release, return, and claim operations use short-lived confirmation challenges.
+- A successful claim confirmation returns `202 Accepted`; poll trade events for the final result.
+- The API can provide a reduction return address when a trade is already in `waitingReduceAmountAddress`, but it cannot initiate a reduction.
+
+## Public Endpoints [#public-endpoints]
+
+### GET /servers [toc] [#servers-endpoint]
 
 <Endpoint id="servers-endpoint" method="get" endpoint="/servers">
-  <p>Get the list of all servers the bot is in.</p>
-  <h3 id="servers-structure" className="text-xl font-bold inline-block scroll-mt-16">Response Structure</h3>
-  <p className="text-sm italic">Each object in the array has the following structure:</p>
+  <p>Get the list of Discord servers AutoPlus is in.</p>
+  <h3 id="servers-response" className="text-xl font-bold inline-block scroll-mt-16">Response Structure</h3>
+  <p className="text-sm italic">Each object in the returned array has this structure:</p>
   <StructureTable data={[
-    { field: "id", type: "string", description: "The server ID" },
-    { field: "name", type: "string", description: "The server name" },
-    { field: "icon", type: "string", description: "The server icon URL" }
+    { field: "id", type: "string", description: "Discord server ID." },
+    { field: "name", type: "string", description: "Discord server name." },
+    { field: "icon", type: "string", description: "Server icon URL." }
   ]} />
 </Endpoint>
 
-## GET /stats [toc] [#stats-endpoint]
+### GET /stats [toc] [#stats-endpoint]
 
 <Endpoint id="stats-endpoint" method="get" endpoint="/stats">
-  <p>Get the stats of the whole bot.</p>
-  <h3 id="stats-structure" className="text-xl font-bold inline-block scroll-mt-16">Response Structure</h3>
+  <p>Get global AutoPlus trade statistics.</p>
+  <h3 id="stats-response" className="text-xl font-bold inline-block scroll-mt-16">Response Structure</h3>
   <StructureTable data={[
-    { field: "trades", type: "number", description: "The number total of trades made on the bot (completed + canceled)" },
-    { field: "volume", type: "number", description: "The total volume in USD of trades made on the bot (completed + canceled)" },
-    { field: "canceledTrades", type: "number", description: "The number of trades canceled on the bot" },
-    { field: "canceledVolume", type: "number", description: "The total volume in USD of trades canceled on the bot" },
-    { field: "trades24h", type: "number", description: "The number of trades made on the bot in the last 24h (completed + canceled)" },
-    { field: "volume24h", type: "number", description: "The total volume in USD of trades made on the bot in the last 24h (completed + canceled)" }
+    { field: "trades", type: "number", description: "Total completed and canceled trades." },
+    { field: "volume", type: "number", description: "Total completed and canceled volume in USD." },
+    { field: "canceledTrades", type: "number", description: "Total canceled trades." },
+    { field: "canceledVolume", type: "number", description: "Total canceled volume in USD." },
+    { field: "trades24h", type: "number", description: "Trades recorded during the last 24 hours." },
+    { field: "volume24h", type: "number", description: "Volume recorded during the last 24 hours in USD." }
   ]} />
 </Endpoint>
 
-## GET /transactions [toc] [#transactions-endpoint]
+### GET /transactions [toc] [#transactions-endpoint]
 
 <Endpoint id="transactions-endpoint" method="get" endpoint="/transactions">
-  <p>Get the 10 most recent transactions made on the bot.</p>
-  <h3 id="transactions-structure" className="text-xl font-bold inline-block scroll-mt-16">Response Structure</h3>
-  <p className="text-sm italic">Each object in the array has the following structure:</p>
+  <p>Get the 10 most recent public AutoPlus transactions.</p>
+  <h3 id="transactions-response" className="text-xl font-bold inline-block scroll-mt-16">Response Structure</h3>
+  <p className="text-sm italic">Each object in the returned array has this structure:</p>
   <StructureTable data={[
-    { field: "crypto", type: <a href="/docs/public-api#crypto" className="text-primary hover:underline">crypto</a>, description: "The crypto used in the transaction" },
-    { field: "amount", type: "number", description: "The amount of crypto handled in the transaction" },
-    { field: "amountUsd", type: "number", description: "The amount of crypto in USD handled in the transaction" },
-    { field: "txid", type: "string", description: "The transaction ID of the bot receiving the funds" },
-    { field: "txid2", type: "string", description: "The transaction ID of the bot releasing the funds" },
-    { field: "receivedAt", type: "number", description: "The timestamp of when the bot received the funds, in seconds since unix epoch" },
-    { field: "closedAt", type: "number", description: "The timestamp of when the bot closed the trade, in seconds since unix epoch" }
+    { field: "crypto", type: "Crypto", description: "Crypto used by the trade." },
+    { field: "amount", type: "number", description: "Transaction amount in the selected crypto." },
+    { field: "amountUsd", type: "number", description: "Transaction amount valued in USD." },
+    { field: "txid", type: "string", description: "Incoming escrow transaction ID." },
+    { field: "txid2", type: "string", description: "Settlement transaction ID." },
+    { field: "receivedAt", type: "number", description: "Timestamp when escrow received the funds." },
+    { field: "closedAt", type: "number", description: "Timestamp when the trade closed." }
   ]} />
 </Endpoint>
 
-## POST /guilds/{"{guildId}"}/trades [toc] [#open-trade-endpoint]
+## Authenticated Endpoints [#authenticated-endpoints]
 
-<Endpoint id="open-trade-endpoint" method="post" endpoint="/guilds/{guildId}/trades">
-  <p>Open a trade with the bot.</p>
-  <h3 id="open-trade-structure" className="text-xl font-bold inline-block scroll-mt-16">Request Structure</h3>
-  <p className="text-sm italic">This request requires authentication.</p>
+All endpoints in this section require bearer authentication.
+
+### POST /guilds/{"{guildId}"}/trades [toc] [#create-trade-endpoint]
+
+<Endpoint id="create-trade-endpoint" method="post" endpoint="/guilds/{guildId}/trades">
+  <p>Create a trade in an API-enabled Discord server.</p>
+  <p className="text-sm italic">Requires bearer authentication and an Idempotency-Key header.</p>
+  <h3 id="create-trade-request" className="text-xl font-bold inline-block scroll-mt-16">Request Structure</h3>
   <StructureTable data={[
-    { field: "userId1", type: "string", description: "The user ID of the first user" },
-    { field: "userId2", type: "string", description: "The user ID of the second user" },
-    { field: "crypto", type: <a href="/docs/public-api#crypto" className="text-primary hover:underline">crypto</a>, description: "The crypto used in the transaction" }
+    { field: "crypto", type: "Crypto", description: "Crypto and network used by the trade." },
+    { field: "sender", type: "string", description: "Discord user ID of the participant funding escrow." },
+    { field: "receiver", type: "string", description: "Discord user ID of the participant receiving released funds." }
   ]} />
-  <h3 id="open-trade-response-structure" className="text-xl font-bold inline-block scroll-mt-16">Response Structure</h3>
+  <p>The authenticated user must be either <code>sender</code> or <code>receiver</code>. Both participants must be different, non-bot members of the guild.</p>
+  <h3 id="create-trade-response" className="text-xl font-bold inline-block scroll-mt-16">Response Structure — 201 Created</h3>
   <StructureTable data={[
-    { field: "message", type: "string", description: "The response message" },
-    { field: "threadId?", type: "string | undefined", description: "The channel ID of the thread created for the trade" }
+    { field: "id", type: "string", description: "Discord thread ID used as {id} in every other trade endpoint." },
+    { field: "tradeId", type: "number", description: "Human-readable incremental trade number." }
   ]} />
 </Endpoint>
+
+### GET /trades/{"{id}"} [toc] [#get-trade-endpoint]
+
+<Endpoint id="get-trade-endpoint" method="get" endpoint="/trades/{id}">
+  <p>Get the current public representation of a trade.</p>
+  <p className="text-sm italic">Requires bearer authentication. The caller must be a participant.</p>
+  <h3 id="get-trade-response" className="text-xl font-bold inline-block scroll-mt-16">Response — 200 OK</h3>
+  <p>Returns a <a href="#trade-structure" className="text-primary hover:underline">Trade</a>. The escrow deposit address is exposed only to the sender.</p>
+</Endpoint>
+
+### GET /trades/{"{id}"}/events [toc] [#trade-events-endpoint]
+
+<Endpoint id="trade-events-endpoint" method="get" endpoint="/trades/{id}/events">
+  <p>Poll durable trade events using a client-managed offset.</p>
+  <p className="text-sm italic">Requires bearer authentication. Maximum two concurrent polls per token and trade.</p>
+  <h3 id="trade-events-query" className="text-xl font-bold inline-block scroll-mt-16">Query Parameters</h3>
+  <StructureTable data={[
+    { field: "offset?", type: "number", description: "Last processed event ID. Omit to receive a current snapshot." },
+    { field: "timeout?", type: "number", description: "Long-poll timeout in seconds. Defaults to 55 and is capped at 60." }
+  ]} />
+  <h3 id="trade-events-response" className="text-xl font-bold inline-block scroll-mt-16">Response Structure — 200 OK</h3>
+  <StructureTable data={[
+    { field: "events", type: "TradeEvent[]", description: "Events after the supplied offset, in chronological order." },
+    { field: "nextOffset", type: "number", description: "Offset to send with the next poll." }
+  ]} />
+  <p>An empty <code>events</code> array means the poll timed out without a new event. Repeat the same offset. If retained history expired, the API returns a current <code>trade.snapshot</code>.</p>
+</Endpoint>
+
+### PUT /trades/{"{id}"}/identification [toc] [#select-identification-endpoint]
+
+<Endpoint id="select-identification-endpoint" method="put" endpoint="/trades/{id}/identification">
+  <p>Select the authenticated user's role after identification was reset.</p>
+  <p className="text-sm italic">Valid only while the trade is waiting for identification.</p>
+  <h3 id="select-identification-request" className="text-xl font-bold inline-block scroll-mt-16">Request Structure</h3>
+  <StructureTable data={[
+    { field: "role", type: '"sender" | "receiver"', description: "Role assigned to the authenticated user." },
+    { field: "revision", type: "number", description: "Current identificationRevision from the trade." }
+  ]} />
+  <h3 id="select-identification-response" className="text-xl font-bold inline-block scroll-mt-16">Response — 200 OK</h3>
+  <p>Returns the updated <a href="#trade-structure" className="text-primary hover:underline">Trade</a>.</p>
+</Endpoint>
+
+### POST /trades/{"{id}"}/identification/confirm [toc] [#confirm-identification-endpoint]
+
+<Endpoint id="confirm-identification-endpoint" method="post" endpoint="/trades/{id}/identification/confirm">
+  <p>Confirm the exact current sender and receiver assignment.</p>
+  <h3 id="confirm-identification-request" className="text-xl font-bold inline-block scroll-mt-16">Request Structure</h3>
+  <StructureTable data={[
+    { field: "sender", type: "string", description: "Exact current sender Discord user ID." },
+    { field: "receiver", type: "string", description: "Exact current receiver Discord user ID." },
+    { field: "revision", type: "number", description: "Current identificationRevision from the trade." }
+  ]} />
+  <h3 id="confirm-identification-response" className="text-xl font-bold inline-block scroll-mt-16">Response — 200 OK</h3>
+  <p>Returns the updated <a href="#trade-structure" className="text-primary hover:underline">Trade</a>. After both participants confirm the same revision, the trade moves to <code>waitingTermsAcceptance</code>.</p>
+</Endpoint>
+
+### POST /trades/{"{id}"}/identification/reset [toc] [#reset-identification-endpoint]
+
+<Endpoint id="reset-identification-endpoint" method="post" endpoint="/trades/{id}/identification/reset">
+  <p>Clear both role assignments and their confirmations.</p>
+  <h3 id="reset-identification-request" className="text-xl font-bold inline-block scroll-mt-16">Request Structure</h3>
+  <StructureTable data={[
+    { field: "sender", type: "null", description: "Must be null." },
+    { field: "receiver", type: "null", description: "Must be null." },
+    { field: "revision", type: "number", description: "Current identificationRevision from the trade." }
+  ]} />
+  <h3 id="reset-identification-response" className="text-xl font-bold inline-block scroll-mt-16">Response — 200 OK</h3>
+  <p>Returns the updated <a href="#trade-structure" className="text-primary hover:underline">Trade</a>.</p>
+</Endpoint>
+
+### PUT /trades/{"{id}"}/terms [toc] [#set-terms-endpoint]
+
+<Endpoint id="set-terms-endpoint" method="put" endpoint="/trades/{id}/terms">
+  <p>Set, replace, or clear the authenticated user's terms.</p>
+  <p className="text-sm italic">Valid only while the trade is waiting for terms acceptance.</p>
+  <h3 id="set-terms-request" className="text-xl font-bold inline-block scroll-mt-16">Request Structure</h3>
+  <StructureTable data={[
+    { field: "text", type: "string | null", description: "Terms text, up to 896 characters. Use null to clear it." },
+    { field: "version", type: "string", description: "Current terms.version from the trade." }
+  ]} />
+  <p>Each update creates a new terms version and clears existing confirmations.</p>
+  <h3 id="set-terms-response" className="text-xl font-bold inline-block scroll-mt-16">Response — 200 OK</h3>
+  <p>Returns the updated <a href="#trade-structure" className="text-primary hover:underline">Trade</a>.</p>
+</Endpoint>
+
+### POST /trades/{"{id}"}/terms/confirm [toc] [#confirm-terms-endpoint]
+
+<Endpoint id="confirm-terms-endpoint" method="post" endpoint="/trades/{id}/terms/confirm">
+  <p>Confirm the complete current terms exactly as returned by the API.</p>
+  <h3 id="confirm-terms-request" className="text-xl font-bold inline-block scroll-mt-16">Request Structure</h3>
+  <StructureTable data={[
+    { field: "sender", type: "string | null", description: "Exact current sender terms, or null when absent." },
+    { field: "receiver", type: "string | null", description: "Exact current receiver terms, or null when absent." },
+    { field: "version", type: "string", description: "Exact current terms version." }
+  ]} />
+  <h3 id="confirm-terms-response" className="text-xl font-bold inline-block scroll-mt-16">Response — 200 OK</h3>
+  <p>Returns the updated <a href="#trade-structure" className="text-primary hover:underline">Trade</a>. After both participants confirm, the trade moves to <code>waitingReceive</code>. The sender's response then includes the escrow deposit address.</p>
+</Endpoint>
+
+### POST /trades/{"{id}"}/action [toc] [#request-action-endpoint]
+
+<Endpoint id="request-action-endpoint" method="post" endpoint="/trades/{id}/action">
+  <p>Request a short-lived confirmation challenge for releasing or returning funds.</p>
+  <p className="text-sm italic">Valid at waitingAction. Sender may release; receiver may return.</p>
+  <h3 id="request-action-request" className="text-xl font-bold inline-block scroll-mt-16">Request Structure</h3>
+  <StructureTable data={[
+    { field: "action", type: '"release" | "return"', description: "Requested fund action." }
+  ]} />
+  <h3 id="request-action-response" className="text-xl font-bold inline-block scroll-mt-16">Response Structure — 201 Created</h3>
+  <StructureTable data={[
+    { field: "action", type: '"release" | "return"', description: "Action bound to the challenge." },
+    { field: "recipient", type: "string", description: "Discord user ID that will receive the funds." },
+    { field: "confirmationCode", type: "string", description: "Secret confirmation code valid for 60 seconds." },
+    { field: "expiresAt", type: "number", description: "Challenge expiration timestamp." }
+  ]} />
+</Endpoint>
+
+### POST /trades/{"{id}"}/confirm-action [toc] [#confirm-action-endpoint]
+
+<Endpoint id="confirm-action-endpoint" method="post" endpoint="/trades/{id}/confirm-action">
+  <p>Confirm a release or return challenge.</p>
+  <p className="text-sm italic">Requires an Idempotency-Key header.</p>
+  <h3 id="confirm-action-request" className="text-xl font-bold inline-block scroll-mt-16">Request Structure</h3>
+  <StructureTable data={[
+    { field: "action", type: '"release" | "return"', description: "Exact action returned by the challenge." },
+    { field: "recipient", type: "string", description: "Exact recipient returned by the challenge." },
+    { field: "confirmationCode", type: "string", description: "Confirmation code returned by the challenge." }
+  ]} />
+  <h3 id="confirm-action-response" className="text-xl font-bold inline-block scroll-mt-16">Response — 200 OK</h3>
+  <p>Returns the updated <a href="#trade-structure" className="text-primary hover:underline">Trade</a>. Release moves the trade to <code>waitingAddress</code>; return moves it to <code>waitingReturnAddress</code>.</p>
+</Endpoint>
+
+### POST /trades/{"{id}"}/claim-funds [toc] [#claim-funds-endpoint]
+
+<Endpoint id="claim-funds-endpoint" method="post" endpoint="/trades/{id}/claim-funds">
+  <p>Request a confirmation challenge for a payout, return, or reduction-return address.</p>
+  <p className="text-sm italic">Receiver claims at waitingAddress. Sender claims at waitingReturnAddress or waitingReduceAmountAddress.</p>
+  <h3 id="claim-funds-request" className="text-xl font-bold inline-block scroll-mt-16">Request Structure</h3>
+  <StructureTable data={[
+    { field: "address", type: "string", description: "Destination address valid for the trade crypto." },
+    { field: "crypto", type: "Crypto", description: "Exact crypto value from the trade." }
+  ]} />
+  <h3 id="claim-funds-response" className="text-xl font-bold inline-block scroll-mt-16">Response Structure — 201 Created</h3>
+  <StructureTable data={[
+    { field: "address", type: "string", description: "Address bound to the challenge." },
+    { field: "crypto", type: "Crypto", description: "Crypto bound to the challenge." },
+    { field: "confirmationCode", type: "string", description: "Secret confirmation code valid for 60 seconds." },
+    { field: "expiresAt", type: "number", description: "Challenge expiration timestamp." },
+    { field: "btcFeeOptions?", type: "BtcFeeOption[]", description: "Available fee choices for BTC claims only." }
+  ]} />
+</Endpoint>
+
+### POST /trades/{"{id}"}/confirm-claim [toc] [#confirm-claim-endpoint]
+
+<Endpoint id="confirm-claim-endpoint" method="post" endpoint="/trades/{id}/confirm-claim">
+  <p>Confirm the destination and begin the fund transfer.</p>
+  <p className="text-sm italic">Requires an Idempotency-Key header.</p>
+  <h3 id="confirm-claim-request" className="text-xl font-bold inline-block scroll-mt-16">Request Structure</h3>
+  <StructureTable data={[
+    { field: "address", type: "string", description: "Exact original address returned by the challenge." },
+    { field: "crypto", type: "Crypto", description: "Exact crypto returned by the challenge." },
+    { field: "confirmationCode", type: "string", description: "Confirmation code returned by the challenge." },
+    { field: "btcFee?", type: "BtcFee", description: "One unchanged BTC fee option. Omit for non-BTC trades." }
+  ]} />
+  <h3 id="confirm-claim-response" className="text-xl font-bold inline-block scroll-mt-16">Response Structure — 202 Accepted</h3>
+  <StructureTable data={[
+    { field: "executionId", type: "string", description: "Fund execution identifier." },
+    { field: "status", type: '"pending"', description: "The transfer was accepted for asynchronous processing." }
+  ]} />
+  <p>Continue polling trade events. <code>trade.fund.execution.updated</code> reports execution progress and <code>trade.closed</code> reports the final release or return.</p>
+</Endpoint>
+
+## Response Structures [#response-structures]
+
+### Trade [#trade-structure]
+
+<StructureTable data={[
+  { field: "id", type: "string", description: "Discord trade thread ID used in API routes." },
+  { field: "tradeId", type: "number", description: "Human-readable incremental trade number." },
+  { field: "revision", type: "number", description: "Current public trade revision." },
+  { field: "openedAt", type: "number", description: "Timestamp when the trade opened." },
+  { field: "crypto", type: "Crypto", description: "Crypto and network selected for the trade." },
+  { field: "status", type: "TradeStatus", description: "Current trade lifecycle status." },
+  { field: "sender?", type: "string", description: "Sender Discord user ID. Omitted while identification is reset." },
+  { field: "receiver?", type: "string", description: "Receiver Discord user ID. Omitted while identification is reset." },
+  { field: "identificationRevision", type: "number", description: "Revision used for identification updates and confirmations." },
+  { field: "identificationConfirmedBy", type: "string[]", description: "Participant IDs that confirmed the current identification." },
+  { field: "terms?", type: "TradeTerms", description: "Current terms and confirmation state." },
+  { field: "address?", type: "string", description: "Escrow deposit address. Exposed only to the sender." },
+  { field: "fees?", type: "number", description: "Network fees in the selected crypto." },
+  { field: "feesUsd?", type: "number", description: "Estimated network fees in USD." },
+  { field: "amount?", type: "number", description: "Amount received by escrow in the selected crypto." },
+  { field: "amountUsd?", type: "number", description: "Received amount valued in USD." },
+  { field: "receivedAt?", type: "number", description: "Timestamp when the deposit was received." },
+  { field: "txid?", type: "string", description: "Incoming deposit transaction ID." },
+  { field: "settlementTxid?", type: "string", description: "Final payout or return transaction ID." },
+  { field: "fundControlsLocked?", type: "boolean", description: "True when fund actions are temporarily locked." }
+]} />
+
+### TradeStatus [#trade-status-structure]
+
+<Block color="gray" padding="p-2" className="mt-2">
+  <code>"waitingIdentification" | "waitingTermsAcceptance" | "waitingReceive" | "waitingConfirmations" | "waitingAction" | "waitingReduceAmountAddress" | "waitingReturnAddress" | "waitingAddress" | "completed"</code>
+</Block>
+
+### TradeTerms [#trade-terms-structure]
+
+<StructureTable data={[
+  { field: "version", type: "string", description: "Opaque version required for terms updates and confirmations." },
+  { field: "sender", type: "TradeTermsSide", description: "Sender terms and confirmation state." },
+  { field: "receiver", type: "TradeTermsSide", description: "Receiver terms and confirmation state." }
+]} />
+
+Each `TradeTermsSide` contains:
+
+<StructureTable data={[
+  { field: "text?", type: "string", description: "Terms text. Omitted when no terms were set." },
+  { field: "confirmed", type: "boolean", description: "Whether this participant confirmed the current version." },
+  { field: "confirmedAt?", type: "number", description: "Confirmation timestamp." }
+]} />
+
+### TradeEvent [#trade-event-structure]
+
+<StructureTable data={[
+  { field: "id", type: "number", description: "Monotonically increasing event ID within the trade." },
+  { field: "type", type: "TradeEventType", description: "Event category." },
+  { field: "occurredAt", type: "number", description: "Timestamp when the event occurred." },
+  { field: "changes", type: "TradeEventChanges", description: "Changed public fields and optional status or outcome information." },
+  { field: "trade", type: "Trade", description: "Complete API trade snapshot at this event." }
+]} />
+
+<Block color="gray" padding="p-2" className="mt-2">
+  <code>"trade.snapshot" | "trade.created" | "trade.identification.updated" | "trade.terms.updated" | "trade.status.changed" | "trade.fund.execution.updated" | "trade.support.updated" | "trade.closed"</code>
+</Block>
+
+Events are retained for at least one hour. A closed trade may no longer be returned by `GET /trades/{id}`, but its retained event stream remains available to its participants.
+
+### BTC fee types [#btc-fee-structure]
+
+<StructureTable data={[
+  { field: "priority", type: '"high" | "medium" | "none"', description: "Fee priority returned by AutoPlus." },
+  { field: "satPerVbyte", type: "number", description: "Fee rate that must be returned unchanged." },
+  { field: "estimatedCostUsd", type: "number", description: "Estimated transfer cost. Present in BtcFeeOption responses only." }
+]} />
+
+## Errors [#errors]
+
+API errors use the HTTP status code as the primary result and return:
+
+<StructureTable data={[
+  { field: "code", type: "string", description: "Stable machine-readable error code." },
+  { field: "message", type: "string", description: "Human-readable error description." },
+  { field: "requestId", type: "string", description: "Request identifier to provide when contacting support." },
+  { field: "details?", type: "object", description: "Optional safe machine-readable context." }
+]} />
+
+Common status codes:
+
+<StructureTable data={[
+  { field: "400", type: "Bad Request", description: "Malformed JSON, missing field, or invalid field type." },
+  { field: "401", type: "Unauthorized", description: "Bearer token is missing, invalid, expired, or revoked." },
+  { field: "403", type: "Forbidden", description: "The authenticated user or guild cannot perform the operation." },
+  { field: "404", type: "Not Found", description: "Trade does not exist or the caller is not a participant." },
+  { field: "409", type: "Conflict", description: "Wrong state, stale revision, confirmation mismatch, or idempotency conflict." },
+  { field: "410", type: "Gone", description: "Confirmation challenge expired. Request a new challenge." },
+  { field: "422", type: "Unprocessable Content", description: "Invalid address, crypto, or semantic request data." },
+  { field: "429", type: "Too Many Requests", description: "A rate or concurrent polling limit was exceeded." },
+  { field: "500", type: "Internal Server Error", description: "Unexpected internal failure." },
+  { field: "503", type: "Service Unavailable", description: "A required AutoPlus dependency is unavailable." }
+]} />
+
+On `stale_revision` or `confirmation_mismatch`, fetch the trade again and compare the new values before asking the user to confirm them. Never automatically confirm changed roles, terms, recipients, crypto, or addresses.

@@ -45,7 +45,7 @@ export default async function DocumentationPage({ params }: DocsPageProperties) 
 	const pageIndex = pages.findIndex((candidate) => candidate.url === page.url);
 	const previous = neighbour(pageIndex > 0 ? pages[pageIndex - 1] : undefined);
 	const next = neighbour(pageIndex >= 0 && pageIndex < pages.length - 1 ? pages[pageIndex + 1] : undefined);
-	const toc = page.data.toc.filter((item) => item.depth === 2);
+	const toc = page.data.toc.filter((item) => item.depth === 2 || item.depth === 3);
 	const MdxContent = page.data.body;
 	const githubUrl = `https://github.com/autoplus-gg/docs/edit/main/content/docs/${page.path}`;
 	const markdownUrl = `${page.url}.md`;

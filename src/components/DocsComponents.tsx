@@ -146,11 +146,15 @@ export function Endpoint({
 	id
 }: {
 	children: ReactNode;
-	method: "post" | "get";
+	method: "post" | "get" | "put";
 	endpoint: string;
 	id: string;
 }) {
-	const methodColor = method === "post" ? "border-green-800/30 bg-green-900/20" : "border-blue-800/30 bg-blue-900/20";
+	const methodColor = {
+		get: "border-blue-800/30 bg-blue-900/20",
+		post: "border-green-800/30 bg-green-900/20",
+		put: "border-amber-800/30 bg-amber-900/20"
+	}[method];
 
 	return (
 		<div>
