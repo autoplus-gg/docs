@@ -54,7 +54,9 @@ Here are the roles and their meaning on the AutoPlus Discord server:
 
 AutoPlus uses moderation cases to track warnings and mutes. For common rule breaks, staff can use auto-sanctioning so repeated issues escalate in a consistent way.
 
-The first level is usually a warning. Repeated sanctions can then become mutes of `5m`, `1h`, `24h`, `7d`, and finally `30d`. If a user goes 90 days without another moderation case, the escalation history resets.
+Auto-sanctions escalate separately for each reason category over a rolling 90-day period. For example, advertising in the exchange channel and advertising in another channel are both treated as advertising, while a non-English message has a separate history. Staff-written custom reasons share a separate custom category.
+
+The first level is usually a warning. Repeated cases in the same category can then become mutes of `5m`, `1h`, `24h`, `7d`, and finally `30d`. Cases older than 90 days, deleted cases, and unmute or unban records do not increase the level. The automatic 10-minute restriction for excessive exchange-role mentions also does not increase later auto-sanctions. Cooldown safeguards prevent several cases recorded close together from skipping through multiple levels at once.
 
 When possible, AutoPlus sends the user a direct message with the reason and, for mutes, when the mute ends. Staff can still choose stronger action for serious issues such as scams, threats, or severe rule violations.
 
