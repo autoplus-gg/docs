@@ -1,0 +1,36 @@
+@import "tailwindcss";
+@source "../src";
+@source "../content";
+
+@media (prefers-color-scheme: dark) {
+	body {
+		color: whitesmoke;
+		background-color: black;
+	}
+
+	.body-background {
+		background-image: url(/nnnoise-darkmode.svg);
+	}
+}
+
+@media (prefers-color-scheme: light) {
+	body {
+		color: black;
+		background-color: white;
+	}
+
+	.body-background {
+		background-image: url(/nnnoise-lightmode.svg);
+	}
+}
+
+.body-background {
+	background-repeat: no-repeat;
+	background-size: cover;
+	background-attachment: fixed;
+}
+
+@theme {
+	--breakpoint-3xl: 110rem;
+	--color-primary: #67cfee;
+}

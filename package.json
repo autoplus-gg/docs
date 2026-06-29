@@ -1,0 +1,48 @@
+{
+	"name": "@autoplus/docs",
+	"version": "1.0.0",
+	"private": true,
+	"type": "module",
+	"scripts": {
+		"dev": "next dev --turbopack --port 5173",
+		"build": "next build",
+		"docs:typegen": "fumadocs-mdx",
+		"check": "bun run docs:typegen && tsc --noEmit && biome check ."
+	},
+	"exports": {
+		"./components": "./src/components/index.ts",
+		"./layout": "./src/layout.tsx",
+		"./mdx-components": "./src/mdx-components.tsx",
+		"./schema": "./src/schema.ts",
+		"./types": "./src/types.ts"
+	},
+	"dependencies": {
+		"@primer/octicons-react": "^19.28.0",
+		"@tailwindcss/postcss": "^4.3.0",
+		"@types/mdx": "^2.0.14",
+		"@types/react": "^19.2.16",
+		"@types/react-dom": "^19.2.3",
+		"fumadocs-core": "^16.10.6",
+		"fumadocs-mdx": "^15.0.13",
+		"fumadocs-ui": "^16.10.6",
+		"next": "^16.2.7",
+		"react": "^19.2.7",
+		"react-dom": "^19.2.7",
+		"tailwindcss": "^4.3.0",
+		"typescript": "^6.0.3",
+		"zod": "^4.4.3"
+	},
+	"devDependencies": {
+		"@biomejs/biome": "2.4.16",
+		"@types/node": "20.19.0"
+	},
+	"peerDependencies": {
+		"@primer/octicons-react": "^19.28.0",
+		"fumadocs-core": "^16.10.6",
+		"fumadocs-ui": "^16.10.6",
+		"next": "^16.0.0",
+		"react": "^19.2.0",
+		"react-dom": "^19.2.0",
+		"zod": "^4.4.3"
+	}
+}

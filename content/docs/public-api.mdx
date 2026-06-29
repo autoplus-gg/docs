@@ -1,0 +1,109 @@
+---
+title: Public API Documentation
+heading: "📄 Public API Documentation"
+description: AutoPlus's API is based on a HTTPS/REST architecture. The API is there mostly to be used in the website autoplus.gg but some endpoints can be used to integrate AutoPlus in your own projects.
+metadataTitle: "AutoPlus ― Public API Documentation"
+navigationTitle: Public API Docs
+ogImage: /banner.png
+icon: file-code
+order: 5
+---
+
+## API Reference [#api-reference]
+
+AutoPlus's API is based on a HTTPS/REST architecture. The API is there mostly to be used in the website autoplus.gg but some endpoints can be used to integrate AutoPlus in your own projects.
+
+### Base URL [#base-url]
+
+<Block color="gray" padding="p-2" className="mt-2">
+  <code>{"https://api.autoplus.gg/v{version}"}</code>
+</Block>
+
+Where `{"{version}"}` is the API version you want to use. Currently, the only version available is v1.
+
+### Authentication [#authentication]
+
+Some endpoints require authentication. You can authenticate using a api key in the Authorization header.
+
+### Example: [#authentication-example]
+
+<Block color="gray" padding="p-2" className="mt-2">
+  <code>Authorization: h27FGjb3AyjVkGBzRThH</code>
+</Block>
+
+Where `h27FGjb3AyjVkGBzRThH` is your api key. To get your API key, open a support ticket.
+
+### Crypto type [#crypto]
+
+This refers to the crypto/token that the bot supports. Here is the exact type:
+
+<Block color="gray" padding="p-2" className="mt-2">
+  <code>"ltc" | "sol" | "eth" | "bnb" | "btc" | "pol" | "sol_usdt" | "sol_usdc" | "eth_usdt" | "eth_usdc" | "bnb_usdt" | "bnb_usdc" | "pol_usdt" | "pol_usdc" | "pol_usdce"</code>
+</Block>
+
+## Endpoints [#endpoints]
+
+Here are the available endpoints:
+
+## GET /servers [toc] [#servers-endpoint]
+
+<Endpoint id="servers-endpoint" method="get" endpoint="/servers">
+  <p>Get the list of all servers the bot is in.</p>
+  <h3 id="servers-structure" className="text-xl font-bold inline-block scroll-mt-16">Response Structure</h3>
+  <p className="text-sm italic">Each object in the array has the following structure:</p>
+  <StructureTable data={[
+    { field: "id", type: "string", description: "The server ID" },
+    { field: "name", type: "string", description: "The server name" },
+    { field: "icon", type: "string", description: "The server icon URL" }
+  ]} />
+</Endpoint>
+
+## GET /stats [toc] [#stats-endpoint]
+
+<Endpoint id="stats-endpoint" method="get" endpoint="/stats">
+  <p>Get the stats of the whole bot.</p>
+  <h3 id="stats-structure" className="text-xl font-bold inline-block scroll-mt-16">Response Structure</h3>
+  <StructureTable data={[
+    { field: "trades", type: "number", description: "The number total of trades made on the bot (completed + canceled)" },
+    { field: "volume", type: "number", description: "The total volume in USD of trades made on the bot (completed + canceled)" },
+    { field: "canceledTrades", type: "number", description: "The number of trades canceled on the bot" },
+    { field: "canceledVolume", type: "number", description: "The total volume in USD of trades canceled on the bot" },
+    { field: "trades24h", type: "number", description: "The number of trades made on the bot in the last 24h (completed + canceled)" },
+    { field: "volume24h", type: "number", description: "The total volume in USD of trades made on the bot in the last 24h (completed + canceled)" }
+  ]} />
+</Endpoint>
+
+## GET /transactions [toc] [#transactions-endpoint]
+
+<Endpoint id="transactions-endpoint" method="get" endpoint="/transactions">
+  <p>Get the 10 most recent transactions made on the bot.</p>
+  <h3 id="transactions-structure" className="text-xl font-bold inline-block scroll-mt-16">Response Structure</h3>
+  <p className="text-sm italic">Each object in the array has the following structure:</p>
+  <StructureTable data={[
+    { field: "crypto", type: <a href="/docs/public-api#crypto" className="text-primary hover:underline">crypto</a>, description: "The crypto used in the transaction" },
+    { field: "amount", type: "number", description: "The amount of crypto handled in the transaction" },
+    { field: "amountUsd", type: "number", description: "The amount of crypto in USD handled in the transaction" },
+    { field: "txid", type: "string", description: "The transaction ID of the bot receiving the funds" },
+    { field: "txid2", type: "string", description: "The transaction ID of the bot releasing the funds" },
+    { field: "receivedAt", type: "number", description: "The timestamp of when the bot received the funds, in seconds since unix epoch" },
+    { field: "closedAt", type: "number", description: "The timestamp of when the bot closed the trade, in seconds since unix epoch" }
+  ]} />
+</Endpoint>
+
+## POST /guilds/{"{guildId}"}/trades [toc] [#open-trade-endpoint]
+
+<Endpoint id="open-trade-endpoint" method="post" endpoint="/guilds/{guildId}/trades">
+  <p>Open a trade with the bot.</p>
+  <h3 id="open-trade-structure" className="text-xl font-bold inline-block scroll-mt-16">Request Structure</h3>
+  <p className="text-sm italic">This request requires authentication.</p>
+  <StructureTable data={[
+    { field: "userId1", type: "string", description: "The user ID of the first user" },
+    { field: "userId2", type: "string", description: "The user ID of the second user" },
+    { field: "crypto", type: <a href="/docs/public-api#crypto" className="text-primary hover:underline">crypto</a>, description: "The crypto used in the transaction" }
+  ]} />
+  <h3 id="open-trade-response-structure" className="text-xl font-bold inline-block scroll-mt-16">Response Structure</h3>
+  <StructureTable data={[
+    { field: "message", type: "string", description: "The response message" },
+    { field: "threadId?", type: "string | undefined", description: "The channel ID of the thread created for the trade" }
+  ]} />
+</Endpoint>

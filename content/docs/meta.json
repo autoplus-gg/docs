@@ -1,0 +1,14 @@
+{
+	"title": "Documentation",
+	"pages": [
+		"about-autoplus",
+		"slash-commands",
+		"autoplus-helper",
+		"avoid-impersonators",
+		"points-system",
+		"public-api",
+		"referral-system",
+		"server-guide",
+		"trade-system"
+	]
+}

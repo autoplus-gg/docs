@@ -1,0 +1,31 @@
+name: Update Private Site
+
+on:
+  push:
+    branches:
+      - main
+
+permissions: {}
+
+jobs:
+  dispatch:
+    if: ${{ vars.DOCS_SYNC_ENABLED == 'true' }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Create cross-repository token
+        id: app-token
+        uses: actions/create-github-app-token@v2
+        with:
+          app-id: ${{ secrets.DOCS_SYNC_APP_ID }}
+          private-key: ${{ secrets.DOCS_SYNC_PRIVATE_KEY }}
+          owner: autoplus-gg
+          repositories: autoplus.gg
+
+      - name: Dispatch pinned documentation update
+        env:
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
+          DOCS_SHA: ${{ github.sha }}
+        run: |
+          gh api --method POST repos/autoplus-gg/autoplus.gg/dispatches \
+            -f event_type=docs-updated \
+            -f "client_payload[sha]=$DOCS_SHA"
