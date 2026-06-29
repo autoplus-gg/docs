@@ -16,6 +16,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { type ReactNode, useEffect, useSyncExternalStore } from "react";
 import type { DocIcon, DocNavigationItem } from "../types";
+import { DocsSearch } from "./DocsSearch";
 
 let mobileSidebarOpen = false;
 const sidebarListeners = new Set<() => void>();
@@ -107,6 +108,7 @@ export function DocsSidebar({ items }: { items: DocNavigationItem[] }) {
 					className="w-64 overflow-y-auto rounded-md border-r border-gray-200/50 bg-gray-600/5 p-4 backdrop-blur lg:m-5 lg:h-auto lg:border dark:border-gray-200/10"
 				>
 					<div className="flex flex-col gap-2">
+						<DocsSearch />
 						{items.map((item) => (
 							<SidebarButton key={item.url} item={item} onNavigate={() => setMobileSidebarOpen(false)} />
 						))}
