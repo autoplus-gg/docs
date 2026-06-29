@@ -9,6 +9,7 @@ export {
 	InlineCode,
 	StructureTable
 } from "./DocsComponents";
+export { DocsSearch } from "./DocsSearch";
 export { DocsSidebar } from "./DocsSidebar";
 export { PreviousAndNext } from "./PreviousAndNext";
 export { ServerList } from "./ServerList";
